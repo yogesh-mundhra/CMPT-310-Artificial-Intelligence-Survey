@@ -301,18 +301,15 @@ class CornersProblem(search.SearchProblem):
         space)
         """
         "*** YOUR CODE HERE ***"
-        return self.startingPosition, self.corners
+        return [self.startingPosition, []] #startingPosition coordinates and  list of corners visited is the state
 
     def isGoalState(self, state):
         """
         Returns whether this search state is a goal state of the problem.
         """
         "*** YOUR CODE HERE ***"
-        position, corners = state
-        if position in corners and len(corners) == 1:
-            return True
-        return False
-
+        cornersVisited = state[1] #provided for clarity, could be turned into a simple line statement
+        return len(cornersVisited) == 4 #if all corners have been visited
 
     def getSuccessors(self, state):
         """
@@ -324,18 +321,7 @@ class CornersProblem(search.SearchProblem):
             state, 'action' is the action required to get there, and 'stepCost'
             is the incremental cost of expanding to that successor
         """
-
         successors = []
-        for action in [Directions.NORTH, Directions.SOUTH, Directions.EAST, Directions.WEST]:
-            # position, corners = state
-            # x, y = position
-            # dx, dy = Actions.directionToVector(action)
-            # nextx, nexty = int(x + dx), int(y + dy)
-            # hitsWall = self.walls[nextx][nexty]
-            # if not hitsWall:
-            #     if state not in corners:
-            #         nextState = ((nextx, nexty), corners)
-            #     else:
             #
             # Add a successor state to the successor list if the action is legal
             # Here's a code snippet for figuring out whether a new position hits a wall:
@@ -343,10 +329,22 @@ class CornersProblem(search.SearchProblem):
             #   dx, dy = Actions.directionToVector(action)
             #   nextx, nexty = int(x + dx), int(y + dy)
             #   hitsWall = self.walls[nextx][nexty]
-
-            "*** YOUR CODE HERE ***"
-
-
+        "*** YOUR CODE HERE ***"
+        for action in [Directions.NORTH, Directions.SOUTH, Directions.EAST, Directions.WEST]:
+            currentPosition, cornersVisited = state #code used as provided in comment above
+            x, y = currentPosition                  #current state is a list of cornersVisited and current Position
+            dx, dy = Actions.directionToVector(action)
+            nextx, nexty = int(x + dx), int(y + dy)
+            nextState = (nextx, nexty)
+            hitsWall = self.walls[nextx][nexty]
+            if not hitsWall:        #if not hitting wall in the current Position
+                if(nextState in self.corners and not nextState in cornersVisited):
+                    #if the next state is a corner that has not been visited before
+                    cornersVisited = list(cornersVisited) # typecast into list
+                    cornersVisited.append(nextState)      # add to list of corners visited
+                successors.append(((nextState,cornersVisited), action, 1))  #add state list of successors
+            else:
+                continue #continue if hitting wall
         self._expanded += 1 # DO NOT CHANGE
         return successors
 
@@ -381,10 +379,26 @@ def cornersHeuristic(state, problem):
     shortest path from the state to a goal of the problem; i.e.  it should be
     admissible (as well as consistent).
     """
+    from util import manhattanDistance
     corners = problem.corners # These are the corner coordinates
     walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
-
     "*** YOUR CODE HERE ***"
+    currentPosition, visitedCorners = state #assign current position and list of corners already visited
+    heuristic = 0                           #initialize heuristic to null
+    unvisitedCorners = list([x for x in problem.corners if x not in visitedCorners])
+    #finds all corners that have not been visited and puts them into list (really proud of this statement!)
+    while len(unvisitedCorners):
+        for i in range(len(unvisitedCorners)): #for every unvisited corner
+            smallestPath = 100000              # set ridiculously high number for smallestPath as an upperbound
+            for targetCorner in unvisitedCorners:   #for every corner, calculate the manhattan distance
+                distanceToTarget = util.manhattanDistance(currentPosition, targetCorner)
+                if distanceToTarget < smallestPath: #if distance is smaller than the smallest path, it's a closer corner
+                    smallestPath = distanceToTarget
+                    closestCorner = targetCorner
+        heuristic += smallestPath # add smallest distance to heuristic
+        unvisitedCorners.remove(closestCorner)  # remove closestcorner since we are travelling to it
+        currentPosition = closestCorner #make closest corner the current position and continue again
+    return heuristic
 
 
 def mazeDistance(point1, point2, gameState):

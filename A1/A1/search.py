@@ -97,19 +97,22 @@ def tinyMazeSearch(problem):
 
 
 def genericGraphSearch(problem, data_struct):
-    visited_set = []
-    data_struct.push((problem.getStartState(), [], 0))
-    # visited_set.append(problem.getStartState()) seems to break the 8 problem
-    while not data_struct.isEmpty():
-        state, actions, cost = data_struct.pop()
-        if state not in visited_set:
-            visited_set.append(state)
-            if problem.isGoalState(state):
+    """
+        Returns search result provided a data structure type (more like implementation)
+        Works as a skeleton for depth and breadth first search, and creates fringe most appropriate to search
+    """
+    visited_set = [] #initialized set of visited nodes
+    data_struct.push((problem.getStartState(), [], 0)) #push starting state with 0 cost and no actions list into fringe
+    while not data_struct.isEmpty():    #while queue/stack is not  empty
+        state, actions, cost = data_struct.pop()    #remove a node, deepest node for dfs, shallowest for bfs
+        if state not in visited_set:                #if state removed is not already visited
+            visited_set.append(state)               #add to visited state
+            if problem.isGoalState(state):          #if goal state, return actions
                 return actions
             for successor_state, successor_actions, successor_cost in problem.getSuccessors(state):
-                # visited_set.append(successor_state)
-                actions_path = actions + [successor_actions]
-                data_struct.push((successor_state, actions_path, successor_cost))
+                #for successor states, actions and cost from current state
+                actions_path = actions + [successor_actions]    #calculate total actions
+                data_struct.push((successor_state, actions_path, successor_cost)) #add to our frontier/fringe
     return []
 
 
@@ -134,7 +137,7 @@ def depthFirstSearch(problem):
     """
     "*** YOUR CODE HERE ***"
     """intiialize fringe empty stack here"""
-    frontier = util.Stack()
+    frontier = util.Stack() #initialize stack and call skeleton graph search
     return genericGraphSearch(problem, frontier)
 
 def breadthFirstSearch(problem):
@@ -142,7 +145,7 @@ def breadthFirstSearch(problem):
     Q1.2
     Search the shallowest nodes in the search tree first."""
     "*** YOUR CODE HERE ***"
-    frontier = util.Queue()
+    frontier = util.Queue() #initialize queue and call skeleton graph search
     return genericGraphSearch(problem, frontier)
 
 def nullHeuristic(state, problem=None):
@@ -159,8 +162,8 @@ def aStarSearch(problem, heuristic=nullHeuristic):
     Search the node that has the lowest combined cost and heuristic first."""
     """Call heuristic(s,problem) to get h(s) value."""
     "*** YOUR CODE HERE ***"
-    frontier = util.PriorityQueue()
-    frontier.push((problem.getStartState(), [], 0), 0)
+    frontier = util.PriorityQueue() #similar to dfs and bfs, comments only where the differences are
+    frontier.push((problem.getStartState(), [], 0), 0) #now pushing into fringe/frontier with priority as well
     visited_set = []
     while not frontier.isEmpty():
         state, actions, cost = frontier.pop()
@@ -169,11 +172,11 @@ def aStarSearch(problem, heuristic=nullHeuristic):
         if state not in visited_set:
             visited_set.append(state)
             for successor_state, successor_actions, successor_cost in problem.getSuccessors(state):
-               # if successor_state not in visited_set:
+                #we now calculate f(n) = g(n) + h(n), using cost of current state, successor_states as well as heuristic
                 f = successor_cost + cost + heuristic(successor_state, problem)
+                #push into fringe with priority f(n)
                 frontier.push((successor_state, actions + [successor_actions], successor_cost + cost), f)
     return []
-
 
 
 def priorityQueueDepthFirstSearch(problem):
@@ -182,10 +185,9 @@ def priorityQueueDepthFirstSearch(problem):
     Reimplement DFS using a priority queue.
     """
     "*** YOUR CODE HERE ***"
-    frontier = util.PriorityQueue()
+    frontier = util.PriorityQueue() #similar to astar, except for depth first
     visited_set = []
-    frontier.push((problem.getStartState(), [], 0), 0)
-    # visited_set.append(problem.getStartState()) seems to break the 8 problem
+    frontier.push((problem.getStartState(), [], 0), 0) #initial priority  0
     while not frontier.isEmpty():
         state, actions, cost = frontier.pop()
         if state not in visited_set:
@@ -193,8 +195,11 @@ def priorityQueueDepthFirstSearch(problem):
             if problem.isGoalState(state):
                 return actions
             for successor_state, successor_actions, successor_cost in problem.getSuccessors(state):
+                #depth first implementation so priority is assigned based on length of actions in path
+                #deepest nodes will have higher length_path
                 actions_path = actions + [successor_actions]
                 length_path = len(actions_path)
+                #pushed negated length path to prioritize highest magnitude values first
                 frontier.push((successor_state, actions_path, successor_cost), -length_path)
     return []
 
@@ -204,21 +209,22 @@ def priorityQueueBreadthFirstSearch(problem):
     Reimplement BFS using a priority queue.
     """
     "*** YOUR CODE HERE ***"
-    frontier = util.PriorityQueue()
+    frontier = util.PriorityQueue() #almsot identical to dfs2, differences commented
     visited_set = []
     frontier.push((problem.getStartState(), [], 0), 0)
-    # visited_set.append(problem.getStartState()) seems to break the 8 problem
     while not frontier.isEmpty():
-        level = 0
+        level = 0   #initialize level, think of this is as the depth of the graph/tree
         state, actions, cost = frontier.pop()
         if state not in visited_set:
             visited_set.append(state)
             if problem.isGoalState(state):
                 return actions
             for successor_state, successor_actions, successor_cost in reversed(problem.getSuccessors(state)):
-                actions_path = actions + [successor_actions]
-                level = level + 1
+                #notice this is now done in reversed successors order
+                actions_path = actions + [successor_actions] #actions_path remains the same
+                level = level + 1   #level increases for shallower actions
                 frontier.push((successor_state, actions_path, successor_cost), level)
+                #priority based on level, therefore highest priority returned first, which will be the shallower actions
     return []
 
 #####################################################
@@ -229,6 +235,23 @@ def priorityQueueBreadthFirstSearch(problem):
 
 """
 <Your discussion goes here>
+algorithm used       mazeType         nodes expanded      cost      delta (nodes)     delta(cost)
+bfs                  mediumMaze       269                 68        
+bfs2                 mediumMaze       180                 68        -89               0
+dfs                  mediumMaze       146                 130       
+dfs2                 mediumMaze       269                 246       -33               +130 
+bfs                  bigMaze          620                 210       
+bfs2                 bigMaze          558                 210       -62
+dfs                  bigMaze          390                 210               
+dfs2                 bigMaze          466                 210       +
+astar                mediumMaze       269                 68
+astar                bigMaze          620                 210       (for reference)
+
+The difference is visible in this table. In the case of bfs implemented with a priority queue, bfs2 improved it in
+both bigMaze as well as mediumMaze with less nodes expanded in both cases. dfs2 provided a marginal improvement for
+mediumMaze and a drop in performance for bigMaze, with MORE nodes expanded than originally. Most likely,
+this is due to the priority queue prioritizing nodes with more depth even more, which means it keeps exploring paths
+even if they don't lead to the goalstate
 """
 
 
